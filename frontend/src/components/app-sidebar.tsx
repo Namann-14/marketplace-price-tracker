@@ -1,0 +1,50 @@
+import * as React from "react"
+import { NavMain } from "@/components/nav-main"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar"
+import { Activity, Package, TrendingUp, Settings } from "lucide-react"
+
+export function AppSidebar({
+  activeTab,
+  onTabChange,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & {
+  activeTab: string
+  onTabChange: (id: string) => void
+}) {
+  const navItems = [
+    { title: "Overview", id: "overview", icon: <Activity className="size-4" /> },
+    { title: "Products", id: "products", icon: <Package className="size-4" /> },
+    { title: "Analytics", id: "analytics", icon: <TrendingUp className="size-4" /> },
+    { title: "Settings", id: "settings", icon: <Settings className="size-4" /> },
+  ]
+
+  return (
+    <Sidebar variant="inset" {...props}>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" onClick={() => onTabChange("overview")}>
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary/20 text-primary">
+                <Activity className="size-4" />
+              </div>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-bold tracking-tight">Luminous</span>
+                <span className="truncate text-xs">Price Tracker</span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        <NavMain items={navItems} activeTab={activeTab} onTabChange={onTabChange} />
+      </SidebarContent>
+    </Sidebar>
+  )
+}
