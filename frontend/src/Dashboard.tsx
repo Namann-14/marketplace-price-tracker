@@ -21,25 +21,6 @@ const api = axios.create({
   headers: { 'X-API-Key': API_KEY }
 });
 
-// Mock Graph Data for Timeranges
-const mockGraphData = {
-  '1W': [
-    { name: 'Mon', price: 2100 }, { name: 'Tue', price: 2150 }, { name: 'Wed', price: 2050 }, 
-    { name: 'Thu', price: 2050 }, { name: 'Fri', price: 1950 }, { name: 'Sat', price: 2200 }, { name: 'Sun', price: 2250 },
-  ],
-  '1M': [
-    { name: 'Week 1', price: 1800 }, { name: 'Week 2', price: 1950 }, { name: 'Week 3', price: 2100 }, { name: 'Week 4', price: 2250 }
-  ],
-  '3M': [
-    { name: 'Month 1', price: 1500 }, { name: 'Month 2', price: 1850 }, { name: 'Month 3', price: 2250 }
-  ],
-  '1Y': [
-    { name: 'Q1', price: 1200 }, { name: 'Q2', price: 1400 }, { name: 'Q3', price: 1800 }, { name: 'Q4', price: 2250 }
-  ],
-  'ALL': [
-    { name: '2021', price: 800 }, { name: '2022', price: 1100 }, { name: '2023', price: 1600 }, { name: '2024', price: 2250 }
-  ]
-};
 
 export default function Dashboard() {
   const [products, setProducts] = useState<any[]>([]);
@@ -49,6 +30,7 @@ export default function Dashboard() {
   
   // Expandable Card Modal State
   const [active, setActive] = useState<any | boolean | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
   const id = useId();
 
@@ -58,6 +40,7 @@ export default function Dashboard() {
         setActive(false);
       }
     }
+    setCurrentImageIndex(0);
 
     if (active && typeof active === "object") {
       document.body.style.overflow = "hidden";
@@ -147,24 +130,19 @@ export default function Dashboard() {
                   placeholder="Search inventory..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-muted border border-border rounded-full py-2 pl-10 pr-10 w-64 text-sm focus:outline-none focus:border-primary/50 transition-colors"
-                  autoComplete="off"
+                  className="bg-muted border border-border rounded-lg py-2 pl-10 pr-10 w-64 text-sm focus:outline-none focus:border-primary/50 transition-colors"
+                  autoComplete="on"
                 />
                 {searchQuery && (
                   <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                    <X size={14} />
+                    <X size={16} />
                   </button>
                 )}
               </div>
             </div>
             
             <div className="flex items-center gap-4 sm:gap-6">
-              <AnimatedThemeToggler className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors" />
-              {/* <button className="relative text-muted-foreground hover:text-foreground transition-colors">
-                <Bell size={20} />
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-destructive"></span>
-              </button>
-              <div className="w-px h-6 bg-border hidden sm:block"></div> */}
+              <AnimatedThemeToggler className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors" />
               <button 
                 onClick={handleRefresh}
                 disabled={refreshing}
@@ -185,8 +163,8 @@ export default function Dashboard() {
                   placeholder="Search..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-muted border border-border rounded-full py-2 pl-10 pr-10 w-full text-sm focus:outline-none focus:border-primary/50 transition-colors"
-                  autoComplete="off"
+                  className="bg-muted border border-border rounded-lg py-2 pl-10 pr-10 w-full text-sm focus:outline-none focus:border-primary/50 transition-colors"
+                  autoComplete="on"
                 />
                 {searchQuery && (
                   <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -229,12 +207,41 @@ export default function Dashboard() {
                     className="w-full max-w-[600px] flex flex-col bg-card border border-border rounded-3xl overflow-hidden shadow-2xl relative"
                   >
                     <motion.div layoutId={`image-${active.id}-${id}`} className="w-full h-64 sm:h-80 bg-muted relative border-b border-border flex items-center justify-center">
-                      {active.image_url ? (
-                        <img
-                          src={active.image_url}
-                          alt={active.title}
-                          className="w-full h-full object-contain p-4"
-                        />
+                      {(active.images && active.images.length > 0) || active.image_url ? (
+                        <>
+                          <img
+                            src={active.images && active.images.length > 0 ? active.images[currentImageIndex] : active.image_url}
+                            alt={active.title}
+                            className="w-full h-full object-contain p-4"
+                          />
+                          {active.images && active.images.length > 1 && (
+                            <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2">
+                              {active.images.map((_: any, i: number) => (
+                                <button
+                                  key={i}
+                                  onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(i); }}
+                                  className={`w-2 h-2 rounded-full transition-colors ${i === currentImageIndex ? 'bg-primary' : 'bg-primary/30 backdrop-blur-md'}`}
+                                />
+                              ))}
+                            </div>
+                          )}
+                          {active.images && active.images.length > 1 && (
+                            <>
+                               <button 
+                                 onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(prev => prev === 0 ? active.images.length - 1 : prev - 1); }}
+                                 className="absolute left-4 bg-background/50 hover:bg-background/80 text-foreground p-1.5 rounded-full backdrop-blur transition-all"
+                               >
+                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                               </button>
+                               <button 
+                                 onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(prev => prev === active.images.length - 1 ? 0 : prev + 1); }}
+                                 className="absolute right-4 bg-background/50 hover:bg-background/80 text-foreground p-1.5 rounded-full backdrop-blur transition-all"
+                               >
+                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                               </button>
+                            </>
+                          )}
+                        </>
                       ) : (
                         <Package size={48} className="text-muted-foreground opacity-50" />
                       )}
@@ -363,7 +370,12 @@ export default function Dashboard() {
                   </div>
                   <div className="flex-1 w-full min-h-0">
                     <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
-                      <AreaChart data={mockGraphData[timeRange]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <AreaChart data={
+                        filteredProducts.slice(0, timeRange === '1W' ? 7 : timeRange === '1M' ? 30 : timeRange === '3M' ? 90 : timeRange === '1Y' ? 120 : filteredProducts.length).map(p => ({
+                           name: p.title.length > 8 ? p.title.substring(0, 8) + '...' : p.title,
+                           price: p.current_price
+                        }))
+                      } margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <defs>
                           <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.4}/>
@@ -481,9 +493,9 @@ export default function Dashboard() {
                           <motion.tr layoutId={`card-${p.id}-${id}`} key={p.id} onClick={() => setActive(p)} className="hover:bg-muted/50 transition-colors group cursor-pointer relative z-0">
                             <td className="px-6 py-4 relative z-0">
                               <div className="flex items-center gap-4">
-                                <motion.div layoutId={`image-${p.id}-${id}`} className="w-12 h-12 rounded-lg overflow-hidden bg-white dark:bg-card flex-shrink-0 border border-border group-hover:border-primary/50 transition-colors relative z-0">
+                                <motion.div layoutId={`image-${p.id}-${id}`} className="w-14 h-14 rounded-lg overflow-hidden bg-white dark:bg-card flex-shrink-0 border border-border group-hover:border-primary/50 transition-colors relative z-0">
                                   {p.image_url ? (
-                                    <img src={p.image_url} alt={p.title} className="w-full h-full object-contain" />
+                                    <img src={p.image_url} alt={p.title} className="w-full h-full object-cover" />
                                   ) : (
                                     <div className="w-full h-full flex items-center justify-center text-muted-foreground"><Package size={16} /></div>
                                   )}

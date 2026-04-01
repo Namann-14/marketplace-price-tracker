@@ -36,9 +36,11 @@ class FashionphileCollector(BaseCollector):
 
         # Image: prefer top-level image_url, fall back to main_images
         image_url: str | None = raw.get("image_url")
+        main_images = raw.get("main_images", [])
         if not image_url:
-            main_images = raw.get("main_images", [])
             image_url = main_images[0]["url"] if main_images else None
+        
+        images = [img["url"] for img in main_images] if main_images else None
 
         return NormalizedProduct(
             source=self.source,
@@ -53,5 +55,6 @@ class FashionphileCollector(BaseCollector):
             color=None,
             is_sold=False,
             image_url=image_url,
+            images=images,
             product_url=product_url,
         )

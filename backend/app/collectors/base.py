@@ -18,6 +18,7 @@ class NormalizedProduct:
     color: str | None
     is_sold: bool
     image_url: str | None
+    images: list[str] | None
     product_url: str
 
 

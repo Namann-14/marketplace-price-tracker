@@ -61,6 +61,7 @@ async def _upsert_product(db: AsyncSession, np: NormalizedProduct) -> None:
         existing.last_seen = now
         existing.is_sold = np.is_sold
         existing.group_hash = group_hash
+        existing.images = np.images
     else:
         # New product
         product = Product(
@@ -74,6 +75,7 @@ async def _upsert_product(db: AsyncSession, np: NormalizedProduct) -> None:
             color=np.color,
             is_sold=np.is_sold,
             image_url=np.image_url,
+            images=np.images,
             product_url=np.product_url,
             currency=np.currency,
             current_price=np.price,

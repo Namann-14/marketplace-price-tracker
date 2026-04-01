@@ -29,6 +29,7 @@ class ProductBase(BaseModel):
     group_hash: str | None
     is_sold: bool
     image_url: str | None
+    images: list[str] | None = None
     product_url: str
     currency: str
     current_price: float | None

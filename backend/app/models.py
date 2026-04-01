@@ -8,6 +8,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    JSON,
     UniqueConstraint,
     func,
 )
@@ -31,6 +32,7 @@ class Product(Base):
     group_hash: Mapped[str | None] = mapped_column(String, index=True, nullable=True)
     is_sold: Mapped[bool] = mapped_column(Boolean, default=False)
     image_url: Mapped[str | None] = mapped_column(String, nullable=True)
+    images: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     product_url: Mapped[str] = mapped_column(String, nullable=False)
     currency: Mapped[str] = mapped_column(String, default="USD")
     current_price: Mapped[float | None] = mapped_column(Float, nullable=True)

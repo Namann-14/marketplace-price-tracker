@@ -45,6 +45,7 @@ class FirstDibsCollector(BaseCollector):
 
         main_images = raw.get("main_images", [])
         image_url: str | None = main_images[0]["url"] if main_images else None
+        images = [img["url"] for img in main_images] if main_images else None
 
         return NormalizedProduct(
             source=self.source,
@@ -59,5 +60,6 @@ class FirstDibsCollector(BaseCollector):
             color=None,
             is_sold=False,
             image_url=image_url,
+            images=images,
             product_url=product_url,
         )
