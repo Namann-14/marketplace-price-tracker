@@ -14,10 +14,10 @@ from app.collectors.grailed import GrailedCollector
 from app.models import PriceChangeEvent, PriceHistory, Product
 from app.services import notification
 
-DATA_DIR = Path(__file__).resolve().parents[3] / "data"
+# backend/app/services/ → parents[2] = backend/
+DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=10))
 async def _upsert_product(db: AsyncSession, np: NormalizedProduct) -> None:
     """Upsert a single NormalizedProduct, recording price history and events."""
     result = await db.execute(

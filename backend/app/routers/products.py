@@ -1,13 +1,13 @@
 """Products router: GET /products, GET /products/{id}"""
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.auth import get_api_key
 from app.database import get_db
-from app.models import ApiKey, Product
-from app.schemas import ProductBase, ProductDetail, ProductListResponse
+from app.models import ApiKey, PriceHistory, Product
+from app.schemas import ProductBase, ProductDetail, ProductListResponse, PriceHistoryItem
 
 router = APIRouter()
 
@@ -25,7 +25,6 @@ async def list_products(
     _api_key: ApiKey = Depends(get_api_key),
 ) -> ProductListResponse:
     """Return a paginated list of products with optional filters."""
-    # TODO: implement filtering and pagination logic
     stmt = select(Product)
     count_stmt = select(func.count()).select_from(Product)
 
@@ -48,7 +47,7 @@ async def list_products(
     total_result = await db.execute(count_stmt)
     total = total_result.scalar_one()
 
-    stmt = stmt.offset((page - 1) * limit).limit(limit)
+    stmt = stmt.order_by(Product.created_at.desc()).offset((page - 1) * limit).limit(limit)
     result = await db.execute(stmt)
     products = result.scalars().all()
 
@@ -67,17 +66,24 @@ async def get_product(
     _api_key: ApiKey = Depends(get_api_key),
 ) -> ProductDetail:
     """Return a single product with its last 100 price history entries."""
-    # TODO: implement full logic with 404 handling
-    stmt = (
-        select(Product)
-        .options(selectinload(Product.price_history))
-        .where(Product.id == product_id)
-    )
-    result = await db.execute(stmt)
+    # Fetch product
+    result = await db.execute(select(Product).where(Product.id == product_id))
     product = result.scalar_one_or_none()
 
     if product is None:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Product not found")
 
-    return ProductDetail.model_validate(product)
+    # Fetch last 100 price history entries separately (avoids loading all via relationship)
+    history_result = await db.execute(
+        select(PriceHistory)
+        .where(PriceHistory.product_id == product_id)
+        .order_by(PriceHistory.recorded_at.desc())
+        .limit(100)
+    )
+    history_rows = history_result.scalars().all()
+
+    product_data = ProductBase.model_validate(product)
+    return ProductDetail(
+        **product_data.model_dump(),
+        price_history=[PriceHistoryItem.model_validate(h) for h in history_rows],
+    )
