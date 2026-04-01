@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useId, useRef } from 'react';
+import { AnimatePresence, motion } from "framer-motion";
+import { useOutsideClick } from "@/hooks/use-outside-click";
 import axios from 'axios';
 import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area,
@@ -44,6 +46,30 @@ export default function Dashboard() {
   const [analytics, setAnalytics] = useState<any>({ total_products: 0, by_source: [], by_category: [], by_brand: [] });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Expandable Card Modal State
+  const [active, setActive] = useState<any | boolean | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+  const id = useId();
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setActive(false);
+      }
+    }
+
+    if (active && typeof active === "object") {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [active]);
+
+  useOutsideClick(ref as any, () => setActive(null));
   
   // New States for Interactivity
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'analytics' | 'settings'>('overview');
@@ -171,7 +197,110 @@ export default function Dashboard() {
           </div>
 
           {/* Dashboard Canvas */}
-          <main className="flex-1 overflow-hidden p-12 sm:p-8 space-y-8 z-0">
+          <main className="flex-1 overflow-hidden p-12 sm:p-8 space-y-8 z-0 relative">
+            
+            <AnimatePresence>
+              {active && typeof active === "object" && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-sm h-full w-full z-[100]"
+                />
+              )}
+            </AnimatePresence>
+            <AnimatePresence>
+              {active && typeof active === "object" ? (
+                <div className="fixed inset-0 grid place-items-center z-[110] p-4">
+                  <motion.button
+                    key={`button-${active.id}-${id}`}
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, transition: { duration: 0.05 } }}
+                    className="flex absolute top-4 right-4 items-center justify-center bg-background border border-border rounded-full h-8 w-8 hover:bg-muted transition"
+                    onClick={() => setActive(null)}
+                  >
+                    <X size={16} />
+                  </motion.button>
+                  <motion.div
+                    layoutId={`card-${active.id}-${id}`}
+                    ref={ref}
+                    className="w-full max-w-[600px] flex flex-col bg-card border border-border rounded-3xl overflow-hidden shadow-2xl relative"
+                  >
+                    <motion.div layoutId={`image-${active.id}-${id}`} className="w-full h-64 sm:h-80 bg-muted relative border-b border-border flex items-center justify-center">
+                      {active.image_url ? (
+                        <img
+                          src={active.image_url}
+                          alt={active.title}
+                          className="w-full h-full object-contain p-4"
+                        />
+                      ) : (
+                        <Package size={48} className="text-muted-foreground opacity-50" />
+                      )}
+                    </motion.div>
+
+                    <div className="p-6">
+                      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                        <div>
+                          <motion.h3
+                            layoutId={`title-${active.id}-${id}`}
+                            className="font-bold text-xl sm:text-2xl text-foreground"
+                          >
+                            {active.title}
+                          </motion.h3>
+                          <motion.p
+                            layoutId={`brand-${active.id}-${id}`}
+                            className="text-muted-foreground text-sm mt-1"
+                          >
+                            {active.brand}
+                          </motion.p>
+                        </div>
+                        
+                        <motion.a
+                          layoutId={`button-${active.id}-${id}`}
+                          href={active.product_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-6 py-2.5 text-sm rounded-full font-bold bg-primary hover:opacity-90 transition-opacity text-primary-foreground shrink-0 w-full sm:w-auto text-center"
+                        >
+                          View Original Listing
+                        </motion.a>
+                      </div>
+                      
+                      <div className="pt-6 relative">
+                        <motion.div
+                          layout
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="text-foreground text-sm flex flex-col gap-4 overflow-auto"
+                        >
+                          <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border border-border">
+                            <div>
+                              <span className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Price</span>
+                              <span className="font-bold text-lg text-primary">{new Intl.NumberFormat('en-US', { style: 'currency', currency: active.currency || 'USD' }).format(active.current_price)}</span>
+                            </div>
+                            <div>
+                              <span className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Source</span>
+                              <span className="font-bold capitalize">{active.source}</span>
+                            </div>
+                            <div>
+                              <span className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Condition</span>
+                              <span className="font-medium whitespace-pre-wrap">{active.condition || 'Unknown'}</span>
+                            </div>
+                            <div>
+                              <span className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Status</span>
+                              <span className="font-medium">{active.is_sold ? 'Sold Out' : 'Available'}</span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              ) : null}
+            </AnimatePresence>
             
             {activeTab === 'overview' && (
               <>
@@ -349,19 +478,19 @@ export default function Dashboard() {
                       
                       {!loading && paginatedProducts.map((p) => {
                         return (
-                          <tr key={p.id} className="hover:bg-muted/50 transition-colors group">
-                            <td className="px-6 py-4">
+                          <motion.tr layoutId={`card-${p.id}-${id}`} key={p.id} onClick={() => setActive(p)} className="hover:bg-muted/50 transition-colors group cursor-pointer relative z-0">
+                            <td className="px-6 py-4 relative z-0">
                               <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 border border-border group-hover:border-primary/30 transition-colors">
+                                <motion.div layoutId={`image-${p.id}-${id}`} className="w-12 h-12 rounded-lg overflow-hidden bg-white dark:bg-card flex-shrink-0 border border-border group-hover:border-primary/50 transition-colors relative z-0">
                                   {p.image_url ? (
-                                    <img src={p.image_url} alt={p.title} className="w-full h-full object-cover" />
+                                    <img src={p.image_url} alt={p.title} className="w-full h-full object-contain" />
                                   ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">Img</div>
+                                    <div className="w-full h-full flex items-center justify-center text-muted-foreground"><Package size={16} /></div>
                                   )}
-                                </div>
+                                </motion.div>
                                 <div>
-                                  <p className="font-bold text-foreground max-w-[200px] md:max-w-xs truncate">{p.title}</p>
-                                  <p className="text-xs text-muted-foreground mt-1">{p.brand}</p>
+                                  <motion.p layoutId={`title-${p.id}-${id}`} className="font-bold text-foreground max-w-[200px] md:max-w-xs truncate">{p.title}</motion.p>
+                                  <motion.p layoutId={`brand-${p.id}-${id}`} className="text-xs text-muted-foreground mt-1">{p.brand}</motion.p>
                                 </div>
                               </div>
                             </td>
@@ -374,13 +503,13 @@ export default function Dashboard() {
                               <span className="text-muted-foreground">{p.condition || 'N/A'}</span>
                             </td>
                             <td className="px-6 py-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <span className="text-sm font-bold text-foreground">
+                              <div className="flex items-center justify-end gap-2 text-right">
+                                <motion.span layoutId={`button-${p.id}-${id}`} className="text-sm font-bold text-foreground inline-block">
                                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: p.currency || 'USD' }).format(p.current_price)}
-                                </span>
+                                </motion.span>
                               </div>
                             </td>
-                          </tr>
+                          </motion.tr>
                         );
                       })}
                     </tbody>
