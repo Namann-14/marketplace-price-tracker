@@ -17,6 +17,14 @@ from app.services import notification
 # backend/app/services/ → parents[2] = backend/
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
+import hashlib
+
+def _generate_group_hash(brand: str | None, title: str) -> str:
+    """Generate a stable hash to link identical products across marketplaces."""
+    b_val = (brand or "unknown").strip().lower()
+    t_val = title.strip().lower()
+    # A robust implementation might strip specific stop words, standardise spaces etc.
+    return hashlib.md5(f"{b_val}::{t_val}".encode()).hexdigest()
 
 async def _upsert_product(db: AsyncSession, np: NormalizedProduct) -> None:
     """Upsert a single NormalizedProduct, recording price history and events."""
@@ -28,6 +36,9 @@ async def _upsert_product(db: AsyncSession, np: NormalizedProduct) -> None:
     )
     existing: Product | None = result.scalar_one_or_none()
     now = datetime.now(timezone.utc)
+
+    # Compute group_hash for cross-source merging
+    group_hash = _generate_group_hash(np.brand, np.title)
 
     if existing is not None:
         if existing.current_price != np.price:
@@ -44,22 +55,12 @@ async def _upsert_product(db: AsyncSession, np: NormalizedProduct) -> None:
                 delivered=False,
             )
             db.add(event)
-            await db.flush()
-
-            event_dict = {
-                "id": event.id,
-                "product_id": existing.id,
-                "old_price": existing.current_price,
-                "new_price": np.price,
-                "source": np.source,
-                "detected_at": now.isoformat(),
-            }
-            await notification.broadcast(event_dict)
 
             existing.current_price = np.price
 
         existing.last_seen = now
         existing.is_sold = np.is_sold
+        existing.group_hash = group_hash
     else:
         # New product
         product = Product(
@@ -77,6 +78,7 @@ async def _upsert_product(db: AsyncSession, np: NormalizedProduct) -> None:
             currency=np.currency,
             current_price=np.price,
             last_seen=now,
+            group_hash=group_hash,
         )
         db.add(product)
         await db.flush()

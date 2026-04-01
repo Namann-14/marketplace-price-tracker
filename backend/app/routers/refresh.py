@@ -10,10 +10,12 @@ from app.schemas import RefreshResponse
 router = APIRouter()
 
 
-async def _run_ingestion_bg(db: AsyncSession) -> None:
+async def _run_ingestion_bg() -> None:
     """Background task wrapper for ingestion."""
     from app.services.ingestion import run_ingestion
-    await run_ingestion(db)
+    from app.database import AsyncSessionLocal
+    async with AsyncSessionLocal() as session:
+        await run_ingestion(session)
 
 
 @router.post("", response_model=RefreshResponse)
@@ -23,5 +25,5 @@ async def trigger_refresh(
     _api_key: ApiKey = Depends(get_api_key),
 ) -> RefreshResponse:
     """Trigger a data ingestion refresh as a background task."""
-    background_tasks.add_task(_run_ingestion_bg, db)
+    background_tasks.add_task(_run_ingestion_bg)
     return RefreshResponse(status="refresh started")

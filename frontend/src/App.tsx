@@ -1,8 +1,11 @@
 import Dashboard from './Dashboard';
+import { ThemeProvider } from './components/theme-provider';
 
 function App() {
   return (
-    <Dashboard />
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <Dashboard />
+    </ThemeProvider>
   );
 }
 

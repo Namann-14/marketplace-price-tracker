@@ -26,6 +26,7 @@ class ProductBase(BaseModel):
     size: str | None
     condition: str | None
     color: str | None
+    group_hash: str | None
     is_sold: bool
     image_url: str | None
     product_url: str
@@ -91,3 +92,17 @@ class PriceChangeEventSchema(BaseModel):
     source: str | None
     detected_at: datetime
     delivered: bool
+
+
+# ── Webhook ───────────────────────────────────────────────────────────────────
+
+class WebhookSubscriptionCreate(BaseModel):
+    url: str
+
+class WebhookSubscriptionSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    url: str
+    created_at: datetime
+    is_active: bool

@@ -17,7 +17,7 @@ async def seed():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    raw_key = secrets.token_urlsafe(32)
+    raw_key = "WiC5HbKag-DROSQ0Vxb_l01gFHqiYN6eOBdRTbmwKKc"
     key_hash = bcrypt.hashpw(raw_key.encode(), bcrypt.gensalt()).decode()
 
     async with AsyncSessionLocal() as db:

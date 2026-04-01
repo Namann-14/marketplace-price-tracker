@@ -28,6 +28,7 @@ class Product(Base):
     size: Mapped[str | None] = mapped_column(String, nullable=True)
     condition: Mapped[str | None] = mapped_column(String, nullable=True)
     color: Mapped[str | None] = mapped_column(String, nullable=True)
+    group_hash: Mapped[str | None] = mapped_column(String, index=True, nullable=True)
     is_sold: Mapped[bool] = mapped_column(Boolean, default=False)
     image_url: Mapped[str | None] = mapped_column(String, nullable=True)
     product_url: Mapped[str] = mapped_column(String, nullable=False)
@@ -95,3 +96,12 @@ class PriceChangeEvent(Base):
     delivered: Mapped[bool] = mapped_column(Boolean, default=False)
 
     product: Mapped["Product"] = relationship("Product", back_populates="price_change_events")
+
+
+class WebhookSubscription(Base):
+    __tablename__ = "webhook_subscriptions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    url: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)

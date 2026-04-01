@@ -1,10 +1,10 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area,
   BarChart, Bar, Cell, PieChart, Pie
 } from 'recharts';
-import { RefreshCcw, Bell, Search, Package, TrendingUp, TrendingDown, Clock, X, Settings } from 'lucide-react';
+import { RefreshCcw, Search, Package, TrendingUp, TrendingDown, Clock, X, Settings } from 'lucide-react';
 import { AnimatedThemeToggler } from "./components/ui/animated-theme-toggler";
 import { AppSidebar } from "@/components/app-sidebar"
 import {
@@ -49,6 +49,8 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'analytics' | 'settings'>('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [timeRange, setTimeRange] = useState<'1W' | '1M' | '3M' | '1Y' | 'ALL'>('1W');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchData();
@@ -90,6 +92,13 @@ export default function Dashboard() {
     p.source.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const paginatedProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeTab]);
+
   const COLORS = ['var(--primary)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
 
   return (
@@ -125,11 +134,11 @@ export default function Dashboard() {
             
             <div className="flex items-center gap-4 sm:gap-6">
               <AnimatedThemeToggler className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors" />
-              <button className="relative text-muted-foreground hover:text-foreground transition-colors">
+              {/* <button className="relative text-muted-foreground hover:text-foreground transition-colors">
                 <Bell size={20} />
                 <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-destructive"></span>
               </button>
-              <div className="w-px h-6 bg-border hidden sm:block"></div>
+              <div className="w-px h-6 bg-border hidden sm:block"></div> */}
               <button 
                 onClick={handleRefresh}
                 disabled={refreshing}
@@ -224,7 +233,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div className="flex-1 w-full min-h-0">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minHeight={1} minWidth={1}>
                       <AreaChart data={mockGraphData[timeRange]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <defs>
                           <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
@@ -338,7 +347,7 @@ export default function Dashboard() {
                         </tr>
                       )}
                       
-                      {!loading && filteredProducts.map((p) => {
+                      {!loading && paginatedProducts.map((p) => {
                         return (
                           <tr key={p.id} className="hover:bg-muted/50 transition-colors group">
                             <td className="px-6 py-4">
@@ -377,6 +386,31 @@ export default function Dashboard() {
                     </tbody>
                   </table>
                 </div>
+                
+                {/* Pagination Controls */}
+                {!loading && filteredProducts.length > 0 && (
+                  <div className="p-4 border-t border-border flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredProducts.length)} to {Math.min(currentPage * itemsPerPage, filteredProducts.length)} of {filteredProducts.length} items
+                    </span>
+                    <div className="flex gap-2">
+                      <button 
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        className="px-3 py-1 text-sm rounded border border-border bg-muted/50 hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-foreground"
+                      >
+                        Previous
+                      </button>
+                      <button 
+                        disabled={currentPage === totalPages || totalPages === 0}
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        className="px-3 py-1 text-sm rounded border border-border bg-muted/50 hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-foreground"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             
