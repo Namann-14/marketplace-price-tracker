@@ -97,7 +97,7 @@ export default function Dashboard() {
       <AppSidebar activeTab={activeTab} onTabChange={(id) => setActiveTab(id as any)} />
       
       <SidebarInset>
-        <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground relative">
+        <div className="flex flex-col overflow-hidden bg-background text-foreground relative">
           <div className="absolute top-0 left-1/4 w-[500px] h-[300px] dark:bg-primary/20 bg-transparent rounded-full blur-[120px] pointer-events-none -z-10" />
           
           {/* Topbar */}
