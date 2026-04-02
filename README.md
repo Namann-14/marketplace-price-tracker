@@ -14,6 +14,7 @@ This platform aggregates listing data from secondary markets including Grailed, 
   - [Running Tests](#running-tests)
 - [API Documentation](#api-documentation)
 - [Design Decisions](#design-decisions)
+- [Assumptions](#assumptions)
 - [Project Structure](#project-structure)
 - [Running Tests](#running-tests-1)
 - [Known Limitations](#known-limitations)
@@ -146,7 +147,9 @@ curl -X POST http://localhost:8000/refresh \
 ### `GET /products`
 Retrieves paginated, filterable product catalog.
 **Auth:** API Key
-**Query Params:** `skip` (int), `limit` (int), `source` (str), `min_price` (float), `max_price` (float)
+**Query Params:** `skip` (int), `limit` (int), `source` (str), `category` (str), `min_price` (float), `max_price` (float)
+
+> Invalid or out-of-range parameter values (e.g. `min_price > max_price`) return `400 Bad Request` with a descriptive JSON error message.
 
 ```bash
 curl "http://localhost:8000/products?limit=2" \
@@ -213,9 +216,20 @@ curl http://localhost:8000/analytics \
   "total_products": 142,
   "active_sources": 3,
   "recent_price_drops": 15,
+  "totals_by_source": {
+    "Grailed": 89,
+    "Fashionphile": 34,
+    "1stdibs": 19
+  },
   "average_price_by_source": {
     "Grailed": 250.50,
-    "Fashionphile": 1200.00
+    "Fashionphile": 1200.00,
+    "1stdibs": 3750.00
+  },
+  "average_price_by_category": {
+    "Footwear": 480.00,
+    "Bags": 1850.00,
+    "Outerwear": 620.00
   }
 }
 ```
@@ -269,7 +283,10 @@ curl -X POST http://localhost:8000/keys \
 ### 1. Database Schema
 The database employs a tightly normalized 5-table design. We employ a strict `UNIQUE(source, external_id)` constraint on the products table to guarantee deduplication at ingestion. The `price_history` table operates as a separate append-only ledger decoupling core product metadata from temporal pricing variability. An `api_usage` table granularly records system interactions per request to enable accurate rate limiting and load analytics.
 
-### 2. How Does Price History Scale?
+### 2. Async Data Fetching with Retry Logic
+All I/O operations (file reads today, HTTP calls when live scrapers are added) are wrapped with [`tenacity`](https://tenacity.readthedocs.io/) using `@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=8))`. This makes every collector resilient to transient failures without manual retry loops, and the exponential back-off prevents thundering-herd issues when multiple collectors hit the same upstream host.
+
+### 3. How Does Price History Scale?
 Performance heavily degrades with unbounded history tables. We address this directly:
 - **Current Load:** Indexed on `(product_id, recorded_at DESC)`. Queries execute in `O(log n)` time.
 - **At 1M+ rows:** The path forward involves partitioning `price_history` by month using PostgreSQL range partitioning schema.
@@ -299,6 +316,22 @@ The system treats cross-source listings as separate distinct products (different
 
 ### 6. Authentication
 The API utilizes API keys passed via `X-API-Key` header. Secrets are bcrypt hashed in DB. All requests logged to `api_usage` with endpoint, method, status code. Why not JWT: no need for token expiry or refresh flows in this use case. Simple and auditable.
+
+### 7. Input Validation and Error Handling
+All query parameters are validated by Pydantic before reaching business logic. Invalid inputs (unknown `source` values, `min_price > max_price`, non-numeric price params) return `400 Bad Request` with a structured JSON body containing a human-readable `detail` field, keeping the API predictable for consumers.
+
+---
+
+## Assumptions
+
+Several points in the spec were ambiguous; the choices made are documented here to be explicit:
+
+| # | Ambiguity | Decision Made |
+|---|-----------|---------------|
+| 1 | **Cross-source deduplication** — should the same physical item appearing on Grailed and 1stdibs be merged into one record? | **No merge.** Each `(source, external_id)` pair is its own product row. Merging requires fuzzy title/brand matching that yields unacceptable false-positive rates without a semantic model. |
+| 2 | **Currency** — Grailed and 1stdibs list prices in USD but source data does not include an explicit currency field. | **USD assumed** for all sources. A `currency` column is reserved in the schema for future multi-currency support. |
+| 3 | **`is_sold` listings** — should sold items appear in the active product catalog? | **Excluded.** The ingestion service filters `is_sold = true` records so only active listings enter the main product table. Sold items are still written to `price_history` as terminal data points. |
+| 4 | **Price change threshold** — what delta constitutes a meaningful "price drop"? | **Any downward change** is recorded as an event. No minimum threshold is enforced; consumers can filter by magnitude client-side. |
 
 ---
 
