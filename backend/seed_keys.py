@@ -28,7 +28,9 @@ async def seed():
     print(f"Demo API Key:  {raw_key}")
     print("Store this key – it will NOT be shown again.")
     print("=" * 50)
-
+    print("Example Usage:")
+    print(f'curl -H "X-API-Key: {raw_key}" http://localhost:8000/products')
+    print("=" * 50)
 
 if __name__ == "__main__":
     asyncio.run(seed())

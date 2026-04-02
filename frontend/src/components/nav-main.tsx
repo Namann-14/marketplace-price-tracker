@@ -1,3 +1,5 @@
+import * as React from "react"
+import { useNavigate } from "react-router-dom"
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -15,10 +17,18 @@ export function NavMain({
     title: string
     id: string
     icon: React.ReactNode
+    href?: string
   }[]
   activeTab: string
   onTabChange: (id: string) => void
 }) {
+  const navigate = useNavigate()
+
+  const handleClick = (item: { id: string; href?: string }) => {
+    onTabChange(item.id)
+    if (item.href) navigate(item.href)
+  }
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
@@ -28,7 +38,7 @@ export function NavMain({
             <SidebarMenuButton
               tooltip={item.title}
               isActive={activeTab === item.id}
-              onClick={() => onTabChange(item.id)}
+              onClick={() => handleClick(item)}
             >
               <div className="flex items-center gap-2">
                 {item.icon}

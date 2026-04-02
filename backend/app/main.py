@@ -1,15 +1,17 @@
 """FastAPI application entry point with lifespan and CORS."""
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine, Base
 from app.scheduler import start_scheduler, stop_scheduler
 from app.routers import products, refresh, analytics, events, webhooks
 from app.services.notification import start_webhook_worker, stop_webhook_worker
-from fastapi import Request
 from app.database import AsyncSessionLocal
 from app.models import ApiUsage
+
+BYPASS_PATHS = {"/docs", "/redoc", "/openapi.json", "/keys", "/health"}
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -45,12 +47,13 @@ app.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
 app.include_router(events.router, prefix="/events", tags=["events"])
 app.include_router(webhooks.router, prefix="/webhooks", tags=["webhooks"])
 
+
 @app.middleware("http")
 async def api_usage_middleware(request: Request, call_next):
     """Log API usage after the response has been generated to capture actual status_code."""
     response = await call_next(request)
     api_key_id = getattr(request.state, "api_key_id", None)
-    
+
     if api_key_id is not None:
         async with AsyncSessionLocal() as db:
             usage = ApiUsage(
@@ -61,7 +64,7 @@ async def api_usage_middleware(request: Request, call_next):
             )
             db.add(usage)
             await db.commit()
-            
+
     return response
 
 

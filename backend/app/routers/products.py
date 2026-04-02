@@ -77,7 +77,7 @@ async def get_product(
     history_result = await db.execute(
         select(PriceHistory)
         .where(PriceHistory.product_id == product_id)
-        .order_by(PriceHistory.recorded_at.desc())
+        .order_by(PriceHistory.recorded_at.asc())
         .limit(100)
     )
     history_rows = history_result.scalars().all()

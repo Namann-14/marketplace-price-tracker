@@ -19,10 +19,10 @@ export function AppSidebar({
   onTabChange: (id: string) => void
 }) {
   const navItems = [
-    { title: "Overview", id: "overview", icon: <Activity className="size-4" /> },
-    { title: "Products", id: "products", icon: <Package className="size-4" /> },
-    { title: "Analytics", id: "analytics", icon: <TrendingUp className="size-4" /> },
-    { title: "Settings", id: "settings", icon: <Settings className="size-4" /> },
+    { title: "Overview", id: "overview", icon: <Activity className="size-4" />, href: "/" },
+    { title: "Products", id: "products", icon: <Package className="size-4" />, href: "/products" },
+    { title: "Analytics", id: "analytics", icon: <TrendingUp className="size-4" />, href: "/" },
+    { title: "Settings", id: "settings", icon: <Settings className="size-4" />, href: "/" },
   ]
 
   return (
@@ -35,7 +35,7 @@ export function AppSidebar({
                 <Activity className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-bold tracking-tight">Luminous</span>
+                <span className="truncate font-bold tracking-tight">Entrupy</span>
                 <span className="truncate text-xs">Price Tracker</span>
               </div>
             </SidebarMenuButton>
