@@ -45,17 +45,65 @@ The system centers on an asynchronous FastAPI backend backed by SQLite and SQLAl
 
 ### Local Setup (Without Docker)
 
-1. Clone repo
-2. `cd backend`, create venv, activate it
-3. `pip install -r requirements.txt`
-4. `alembic upgrade head`
-5. `python seed_keys.py`  → copy the printed API key
-6. `python seed_demo.py`  → loads sample data + demo price history
-7. `uvicorn app.main:app --reload`
-8. new terminal → `cd frontend`
-9. create `.env` with `VITE_API_KEY=<your key>`
-10. `npm install && npm run dev`
-11. open `http://localhost:5173`
+#### 1. Clone the Repository
+```bash
+git clone <your-repository-url>
+cd marketplace-price-tracker
+```
+
+#### 2. Backend Setup
+Open a terminal and set up the Python backend environment.
+
+```bash
+# Navigate to the backend directory
+cd backend
+
+# Create and activate a virtual environment
+python -m venv .venv
+
+# On Windows:
+.venv\Scripts\activate
+# On Mac/Linux:
+# source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run database migrations
+alembic upgrade head
+
+# Generate an API key (Copy the printed key!)
+python seed_keys.py
+
+# Seed the database with sample data and price history
+python seed_demo.py
+
+# Start the development server
+uvicorn app.main:app --reload
+```
+
+#### 3. Frontend Setup
+Open a **new, separate terminal** to set up the React frontend.
+
+```bash
+# Navigate to the frontend directory
+cd frontend
+
+# Create a .env file and add the API key you copied from step 2
+echo "VITE_API_KEY=your_copied_api_key_here" > .env
+
+# Install Node dependencies
+npm install
+
+# Start the frontend development server
+npm run dev
+```
+
+#### 4. Usage
+- **Frontend Dashboard:** Once everything is running, open [http://localhost:5173](http://localhost:5173) in your browser.
+- **Backend API & Docs:** To test the API directly using Swagger UI, open [http://localhost:8000/docs](http://localhost:8000/docs).
+  - Click **"Authorize"** at the top right.
+  - Enter your generated API Key to unlock and test the endpoints directly!
 
 ### Running with Docker
 
