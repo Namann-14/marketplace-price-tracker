@@ -14,6 +14,7 @@ router = APIRouter()
 
 @router.get("", response_model=ProductListResponse)
 async def list_products(
+    q: str | None = Query(None),
     source: str | None = Query(None),
     category: str | None = Query(None),
     brand: str | None = Query(None),
@@ -28,6 +29,9 @@ async def list_products(
     stmt = select(Product)
     count_stmt = select(func.count()).select_from(Product)
 
+    if q:
+        stmt = stmt.where(Product.title.ilike(f"%{q}%"))
+        count_stmt = count_stmt.where(Product.title.ilike(f"%{q}%"))
     if source:
         stmt = stmt.where(Product.source == source)
         count_stmt = count_stmt.where(Product.source == source)

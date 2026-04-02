@@ -78,7 +78,7 @@ export default function DashboardPage() {
   return (
     <SidebarProvider>
       <AppSidebar activeTab="overview" onTabChange={(id) => {
-        if (id === 'products') navigate('/products');
+        if (id === 'products') navigate('/');
       }} />
 
       <SidebarInset>
@@ -161,7 +161,7 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {analytics.by_source.map((s, i) => (
+                    {analytics.by_source.map((s) => (
                       <div key={s.source} className="flex items-center justify-between text-sm">
                         <span className="font-medium capitalize text-foreground">{s.source}</span>
                         <span className="text-muted-foreground font-mono">{s.count} items</span>
@@ -217,7 +217,7 @@ export default function DashboardPage() {
                           borderRadius: '8px',
                           padding: '10px 14px',
                         }}
-                        formatter={(val: number) => [`$${val.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, 'Avg Price']}
+                        formatter={(val: any) => [`$${Number(val).toLocaleString(undefined, { maximumFractionDigits: 0 })}`, 'Avg Price']}
                       />
                       <Bar dataKey="avg_price" radius={[6, 6, 0, 0]}>
                         {categoryData.map((_, i) => (

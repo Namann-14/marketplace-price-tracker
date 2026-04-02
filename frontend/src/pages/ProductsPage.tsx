@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Package, ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react';
+import { Package, ChevronLeft, ChevronRight, SlidersHorizontal, X, Search } from 'lucide-react';
 import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler';
@@ -34,7 +34,7 @@ const SOURCE_COLORS: Record<string, string> = {
 
 export default function ProductsPage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
@@ -43,6 +43,7 @@ export default function ProductsPage() {
   const [showFilters, setShowFilters] = useState(false);
 
   // Filter state — initialise from URL params
+  const [q, setQ] = useState(searchParams.get('q') ?? '');
   const [source, setSource] = useState(searchParams.get('source') ?? '');
   const [category, setCategory] = useState(searchParams.get('category') ?? '');
   const [brand, setBrand] = useState(searchParams.get('brand') ?? '');
@@ -56,6 +57,7 @@ export default function ProductsPage() {
       setLoading(true);
       setError(null);
       const params: Record<string, string | number> = { page: pg, limit: LIMIT };
+      if (q) params.q = q;
       if (source) params.source = source;
       if (category) params.category = category;
       if (brand) params.brand = brand;
@@ -71,7 +73,7 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
-  }, [source, category, brand, minPrice, maxPrice]);
+  }, [q, source, category, brand, minPrice, maxPrice]);
 
   useEffect(() => {
     fetchProducts(page);
@@ -83,17 +85,17 @@ export default function ProductsPage() {
   };
 
   const clearFilters = () => {
-    setSource(''); setCategory(''); setBrand('');
+    setQ(''); setSource(''); setCategory(''); setBrand('');
     setMinPrice(''); setMaxPrice(''); setPage(1);
   };
 
   const totalPages = Math.ceil(total / LIMIT);
-  const hasFilters = source || category || brand || minPrice || maxPrice;
+  const hasFilters = q || source || category || brand || minPrice || maxPrice;
 
   return (
     <SidebarProvider>
       <AppSidebar activeTab="products" onTabChange={(id) => {
-        if (id === 'overview') navigate('/');
+        if (id === 'overview') navigate('/dashboard');
       }} />
 
       <SidebarInset>
@@ -112,7 +114,20 @@ export default function ProductsPage() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-1 justify-end">
+              <form
+                onSubmit={(e) => { e.preventDefault(); applyFilters(); }}
+                className="relative hidden sm:block"
+              >
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search title..."
+                  value={q}
+                  onChange={e => setQ(e.target.value)}
+                  className="pl-9 pr-4 py-1.5 rounded-full border border-border bg-muted/50 text-sm focus:outline-none focus:ring-1 focus:ring-primary w-64 transition-all text-foreground"
+                />
+              </form>
               <button
                 onClick={() => setShowFilters(v => !v)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${

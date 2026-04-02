@@ -8,7 +8,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { Activity, Package, TrendingUp, Settings } from "lucide-react"
+import { Activity, Package, TrendingDown } from "lucide-react"
 
 export function AppSidebar({
   activeTab,
@@ -19,10 +19,9 @@ export function AppSidebar({
   onTabChange: (id: string) => void
 }) {
   const navItems = [
-    { title: "Overview", id: "overview", icon: <Activity className="size-4" />, href: "/" },
-    { title: "Products", id: "products", icon: <Package className="size-4" />, href: "/products" },
-    { title: "Analytics", id: "analytics", icon: <TrendingUp className="size-4" />, href: "/" },
-    { title: "Settings", id: "settings", icon: <Settings className="size-4" />, href: "/" },
+    { title: "Products", id: "products", icon: <Package className="size-4" />, href: "/" },
+    { title: "Overview", id: "overview", icon: <Activity className="size-4" />, href: "/overview" },
+    { title: "Price Changes", id: "price-changes", icon: <TrendingDown className="size-4" />, href: "/price-changes" },
   ]
 
   return (

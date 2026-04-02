@@ -266,7 +266,7 @@ export default function ProductDetailPage() {
                       borderRadius: '10px',
                       padding: '10px 14px',
                     }}
-                    formatter={(val: number) => [
+                    formatter={(val: any) => [
                       new Intl.NumberFormat('en-US', { style: 'currency', currency: product.currency }).format(val),
                       'Price',
                     ]}
