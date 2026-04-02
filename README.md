@@ -48,7 +48,7 @@ The system centers on an asynchronous FastAPI backend backed by SQLite and SQLAl
 
 #### 1. Clone the Repository
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/Namann-14/marketplace-price-tracker.git
 cd marketplace-price-tracker
 ```
 
