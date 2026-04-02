@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Package, ChevronLeft, ChevronRight, SlidersHorizontal, X, Search } from 'lucide-react';
+import { Package, ChevronLeft, ChevronRight, SlidersHorizontal, X, Search, RefreshCcw } from 'lucide-react';
 import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler';
@@ -39,6 +39,7 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -89,13 +90,28 @@ export default function ProductsPage() {
     setMinPrice(''); setMaxPrice(''); setPage(1);
   };
 
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      setError(null);
+      await api.post('/refresh');
+      setPage(1);
+      await fetchProducts(1);
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      setError(typeof detail === 'string' ? detail : Array.isArray(detail) ? JSON.stringify(detail) : 'Failed to refresh products.');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const totalPages = Math.ceil(total / LIMIT);
   const hasFilters = q || source || category || brand || minPrice || maxPrice;
 
   return (
     <SidebarProvider>
       <AppSidebar activeTab="products" onTabChange={(id) => {
-        if (id === 'overview') navigate('/dashboard');
+        if (id === 'overview') navigate('/overview');
       }} />
 
       <SidebarInset>
@@ -139,6 +155,14 @@ export default function ProductsPage() {
                 <SlidersHorizontal size={14} />
                 <span className="hidden sm:inline">Filters</span>
                 {hasFilters && <span className="bg-primary text-primary-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center">!</span>}
+              </button>
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-muted text-muted-foreground hover:text-foreground disabled:opacity-60 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              >
+                <RefreshCcw size={14} className={refreshing ? 'animate-spin' : ''} />
+                <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
               </button>
               <AnimatedThemeToggler className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors" />
             </div>

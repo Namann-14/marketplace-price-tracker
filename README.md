@@ -73,7 +73,8 @@ pip install -r requirements.txt
 # Run database migrations
 alembic upgrade head
 
-# Generate an API key (Copy the printed key!)
+# Generate an API key
+# IMPORTANT: COPY THE PRINTED KEY VALUE. You will use it in frontend/.env.
 python seed_keys.py
 
 # Seed the database with sample data and price history
@@ -90,8 +91,13 @@ Open a **new, separate terminal** to set up the React frontend.
 # Navigate to the frontend directory
 cd frontend
 
-# Create a .env file and add the API key you copied from step 2
-echo "VITE_API_KEY=your_copied_api_key_here" > .env
+# Create .env from the example file
+cp .env.example .env
+# Windows PowerShell alternative:
+# Copy-Item .env.example .env
+
+# Open .env and paste the exact key printed by python seed_keys.py
+# (the key from step 2 backend setup)
 
 # Install Node dependencies
 npm install
